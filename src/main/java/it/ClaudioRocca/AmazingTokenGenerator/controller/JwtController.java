@@ -21,7 +21,7 @@ import java.util.Map;
 @RequestMapping("/token/jwt")
 public class JwtController {
 
-    private final String secret = "yJojIqZismADFUmhEjgB9NJxh20JpP4d"; // Deve essere di almeno 256 bit per HMAC SHA-256
+    private final String secret = "yJojIqZismADFUmhEjgB9NJxh20JpP4d";
     private final Base64.Decoder decoder = Base64.getDecoder();
 
     @Autowired
@@ -43,16 +43,13 @@ public class JwtController {
 
             JWTClaimsSet claimsSet = claimsBuilder.build();
 
-            // Crea un oggetto SignedJWT con algoritmo HMAC
             SignedJWT signedJWT = new SignedJWT(
                     new JWSHeader(JWSAlgorithm.HS256),
                     claimsSet);
 
-            // Firma il token
             JWSSigner signer = new MACSigner(secret);
             signedJWT.sign(signer);
 
-            // Ritorna il token JWT serializzato
             return ResponseEntity.ok(signedJWT.serialize());
 
         } catch (JOSEException e) {
@@ -69,12 +66,10 @@ public class JwtController {
             SignedJWT signedJWT = SignedJWT.parse(token);
             JWSVerifier verifier = new MACVerifier(secret);
 
-            // Verifica la firma
             if (!signedJWT.verify(verifier)) {
                 return ResponseEntity.badRequest().body("Firma del token non valida.");
             }
 
-            // Controlla se il token è scaduto
             Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
             if (new Date().after(expiration)) {
                 return ResponseEntity.badRequest().body("Token JWT scaduto.");
@@ -83,7 +78,6 @@ public class JwtController {
             Instant end = Instant.now();
             long timeElapsed = end.toEpochMilli() - start.toEpochMilli();
 
-            // Recupera il payload
             Map<String, Object> payload = signedJWT.getJWTClaimsSet().getClaims();
 
             return ResponseEntity.ok()

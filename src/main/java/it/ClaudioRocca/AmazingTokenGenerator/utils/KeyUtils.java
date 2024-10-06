@@ -1,42 +1,40 @@
 package it.ClaudioRocca.AmazingTokenGenerator.utils;
 
-import org.paseto4j.commons.PublicKey;
 import org.paseto4j.commons.Version;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Base64;
 
 public class KeyUtils {
 
+    public static org.paseto4j.commons.PrivateKey loadPrivateKey(String privateKeyPath) throws Exception {
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
+        keyPairGen.initialize(new ECGenParameterSpec("secp384r1"), new SecureRandom());
+        KeyPair keyPair = keyPairGen.generateKeyPair();
+        java.security.PrivateKey privateKey = keyPair.getPrivate();
+        //writePrivateKeyToPEM(privateKey, privateKeyPath);
 
-    public static PrivateKey readPrivateKey(String filePath) throws Exception {
-        try (InputStream keyStream = KeyUtils.class.getClassLoader().getResourceAsStream(filePath)) {
-            if (keyStream == null) {
-                throw new FileNotFoundException("Private key file not found in classpath.");
-            }
-            byte[] keyBytes = keyStream.readAllBytes();
-            String privateKeyPEM = new String(keyBytes)
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace("-----END PRIVATE KEY-----", "")
-                    .replace("-----BEGIN EC PRIVATE KEY-----", "")
-                    .replace("-----END EC PRIVATE KEY-----", "")
-                    .replaceAll("\\s+", "");
+        return new org.paseto4j.commons.PrivateKey(privateKey, Version.V3);
+    }
 
-            byte[] decodedKey = Base64.getDecoder().decode(privateKeyPEM);
+    private static void writePrivateKeyToPEM(java.security.PrivateKey privateKey, String filePath) throws IOException {
+        StringBuilder pem = new StringBuilder();
+        pem.append("-----BEGIN PRIVATE KEY-----\n");
+        pem.append(Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+        pem.append("\n-----END PRIVATE KEY-----\n");
 
-            // Specifica PKCS8EncodedKeySpec per chiavi PKCS#8
-            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decodedKey);
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
-
-            return keyFactory.generatePrivate(spec);
+        try (FileWriter fileWriter = new FileWriter(filePath)) {
+            fileWriter.write(pem.toString());
         }
     }
+
+
+
 
 
 }

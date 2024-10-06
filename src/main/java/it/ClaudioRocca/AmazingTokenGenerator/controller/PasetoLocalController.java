@@ -63,7 +63,7 @@ public class PasetoLocalController {
             return ResponseEntity.ok(token);
 
         } catch (Exception e) {
-            // Gestisce errori di conversione JSON o generazione token
+
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Invalid data format or error creating token.");
         }
