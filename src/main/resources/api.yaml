@@ -1,0 +1,213 @@
+swagger: 2.0
+info:
+  title: Token Generation API
+  description: API per generare e verificare token JWT, PASETO e Macaroon
+  version: 1.0.0
+
+paths:
+  /jwt/create:
+    post:
+      summary: Crea un token JWT
+      parameters:
+        - name: tokenRequest
+          in: body
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwtCreateRequest'
+      responses:
+        '200':
+          description: Token JWT generato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Il token JWT generato
+
+  /jwt/verify:
+    get:
+      summary: Verifica la validità di un token JWT
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: subject
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token JWT valido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  message:
+                    type: string
+
+  /paseto/create:
+    post:
+      summary: Crea un token PASETO
+      parameters:
+        - name: tokenRequest
+          in: body
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasetoCreateRequest'
+      responses:
+        '200':
+          description: Token PASETO generato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Il token PASETO generato
+
+  /paseto/verify:
+    get:
+      summary: Verifica la validità di un token PASETO
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: subject
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token PASETO valido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  message:
+                    type: string
+
+  /macaroons/create:
+    post:
+      summary: Crea un token Macaroon
+      parameters:
+        - name: caveats
+          in: body
+          required: true
+          type: array
+          items:
+              $ref: '#/components/schemas/Caveat'
+      responses:
+        '200':
+          description: Token Macaroon generato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Il token Macaroon generato
+
+  /macaroons/verify:
+    get:
+      summary: Verifica la validità di un token Macaroon
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token Macaroon valido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  message:
+                    type: string
+
+components:
+  schemas:
+    JwtCreateRequest:
+      type: object
+      properties:
+        sub:
+          type: string
+          description: Il soggetto del token
+        iss:
+          type: string
+          description: L'emittente del token
+        aud:
+          type: array
+          items:
+              type: string
+          description: I destinatari del token
+        exp:
+          type: integer
+          format: int64
+          description: Timestamp di scadenza del token
+        nbf:
+          type: integer
+          format: int64
+          description: Timestamp prima del quale il token non è valido
+        iat:
+          type: integer
+          format: int64
+          description: Timestamp di emissione del token
+
+    PasetoCreateRequest:
+      type: object
+      properties:
+        sub:
+          type: string
+          description: Il soggetto del token
+        iss:
+          type: string
+          description: L'emittente del token
+        aud:
+          type: string
+          description: I destinatari del token
+        exp:
+          type: integer
+          format: int64
+          description: Timestamp di scadenza del token
+        nbf:
+          type: integer
+          format: int64
+          description: Timestamp prima del quale il token non è valido
+        iat:
+          type: integer
+          format: int64
+          description: Timestamp di emissione del token
+  Caveat:
+    type: object
+    properties:
+        key:
+            type: string
+            description: La chiave del caveat
+        value:
+            type: string
+            description: Il valore del caveat

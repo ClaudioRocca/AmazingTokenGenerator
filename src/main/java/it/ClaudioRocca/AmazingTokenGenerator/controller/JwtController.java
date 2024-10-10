@@ -1,93 +1,30 @@
 package it.ClaudioRocca.AmazingTokenGenerator.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
+import it.ClaudioRocca.AmazingTokenGenerator.service.JwtService;
+import it.ClaudioRocca.AmazingTokenGenerator.models.JwtCreateRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/token/jwt")
+@RequestMapping("/jwt")
+@Validated
 public class JwtController {
-
-    private final String secret = "yJojIqZismADFUmhEjgB9NJxh20JpP4d";
-    private final Base64.Decoder decoder = Base64.getDecoder();
-
     @Autowired
-    public JwtController() {
-    }
+    private JwtService jwtService;
+
 
     @PostMapping("/create")
-    public ResponseEntity<String> createJwtToken(@RequestBody Map<String, Object> data) {
-        try {
-            Date iat = new Date(124, Calendar.OCTOBER, 29, 0, 0, 0);
-            Date exp = new Date(124, Calendar.OCTOBER, 29, 23, 59, 59);
-            // Definisce il payload del JWT
-            JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
-                    .issueTime(iat)
-                    .expirationTime(exp);
+    public ResponseEntity<?> createJwtToken(@RequestBody @Valid JwtCreateRequest tokenRequest) {
+        return jwtService.createJwtToken(tokenRequest);
 
-            // Aggiunge i dati passati come payload
-            data.forEach(claimsBuilder::claim);
-
-            JWTClaimsSet claimsSet = claimsBuilder.build();
-
-            SignedJWT signedJWT = new SignedJWT(
-                    new JWSHeader(JWSAlgorithm.HS256),
-                    claimsSet);
-
-            JWSSigner signer = new MACSigner(secret);
-            signedJWT.sign(signer);
-
-            return ResponseEntity.ok(signedJWT.serialize());
-
-        } catch (JOSEException e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("Errore nella creazione del token JWT.");
-        }
     }
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyJwtToken(@RequestParam String token) {
-        Instant start = Instant.now();
-
-        try {
-            SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(secret);
-
-            if (!signedJWT.verify(verifier)) {
-                return ResponseEntity.badRequest().body("Firma del token non valida.");
-            }
-
-            Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
-            if (new Date().after(expiration)) {
-                return ResponseEntity.badRequest().body("Token JWT scaduto.");
-            }
-
-            Instant end = Instant.now();
-            long timeElapsed = end.toEpochMilli() - start.toEpochMilli();
-
-            Map<String, Object> payload = signedJWT.getJWTClaimsSet().getClaims();
-
-            return ResponseEntity.ok()
-                    .body(Map.of(
-                            "decoded_payload", payload,
-                            "time_elapsed", timeElapsed + " ms"
-                    ));
-
-        } catch (ParseException | JOSEException e) {
-            return ResponseEntity.badRequest().body("Errore nella decodifica del token JWT: " + e.getMessage());
-        }
+        return jwtService.verifyJwtToken(token);
     }
+
 }

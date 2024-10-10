@@ -5,10 +5,12 @@ import com.github.nitram509.jmacaroons.CaveatPacket;
 import com.github.nitram509.jmacaroons.Macaroon;
 import com.github.nitram509.jmacaroons.MacaroonsBuilder;
 import com.github.nitram509.jmacaroons.MacaroonsVerifier;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.apache.coyote.Response;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/token/macaroon")
@@ -16,14 +18,22 @@ public class MacaroonController {
     private final String secret = "yJojIqZismADFUmhEjgB9NJxh20JpP4d";
 
     @PostMapping("/create")
-    public String createMacaroon(@RequestParam String location, @RequestParam String identifier) {
+    public ResponseEntity<?> createMacaroon(@RequestParam String location, @RequestParam String identifier, @RequestBody Map<String, String> caveats) {
+        Instant start = Instant.now();
+
         Macaroon macaroon = Macaroon.create(location, secret, identifier);
 
         MacaroonsBuilder builder = Macaroon.builder(macaroon);
-//                .addCaveat("before 2021-12-31T23:59:59");
 
+        for(Map.Entry<String, String> entry : caveats.entrySet()) {
+            builder.addCaveat(entry.getKey() + " = " + entry.getValue());
+        }
+        Instant end = Instant.now();
 
-        return builder.build().serialize();
+        return ResponseEntity.ok().body(Map.of(
+                "macaroon", builder.build().serialize(),
+                "time_elapsed", end.toEpochMilli() - start.toEpochMilli() + " ms"
+        ));
 
     }
 
