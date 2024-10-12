@@ -24,6 +24,7 @@ public class JwtController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyJwtToken(@RequestParam String token) {
+
         return jwtService.verifyJwtToken(token);
     }
 

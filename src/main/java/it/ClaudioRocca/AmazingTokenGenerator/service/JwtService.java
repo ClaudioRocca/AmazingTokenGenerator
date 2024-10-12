@@ -32,6 +32,8 @@ public class JwtService {
                 claimsBuilder.expirationTime(new Date(tokenRequest.getExp()));
             if(tokenRequest.getIat() != null)
                 claimsBuilder.issueTime(new Date(tokenRequest.getIat()));
+            else
+                claimsBuilder.issueTime(new Date());
             if(tokenRequest.getNbf() != null)
                 claimsBuilder.notBeforeTime(new Date(tokenRequest.getNbf()));
 

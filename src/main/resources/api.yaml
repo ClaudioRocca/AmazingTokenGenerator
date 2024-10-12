@@ -1,4 +1,4 @@
-swagger: 2.0
+openapi: 3.0.0
 info:
   title: Token Generation API
   description: API per generare e verificare token JWT, PASETO e Macaroon
@@ -8,14 +8,12 @@ paths:
   /jwt/create:
     post:
       summary: Crea un token JWT
-      parameters:
-        - name: tokenRequest
-          in: body
-          required: true
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JwtCreateRequest'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JwtCreateRequest'
       responses:
         '200':
           description: Token JWT generato con successo
@@ -58,14 +56,12 @@ paths:
   /paseto/create:
     post:
       summary: Crea un token PASETO
-      parameters:
-        - name: tokenRequest
-          in: body
-          required: true
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PasetoCreateRequest'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasetoCreateRequest'
       responses:
         '200':
           description: Token PASETO generato con successo
@@ -108,13 +104,13 @@ paths:
   /macaroons/create:
     post:
       summary: Crea un token Macaroon
-      parameters:
-        - name: caveats
-          in: body
-          required: true
-          type: array
-          items:
-              $ref: '#/components/schemas/Caveat'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaveatPacket'
       responses:
         '200':
           description: Token Macaroon generato con successo
@@ -163,7 +159,7 @@ components:
         aud:
           type: array
           items:
-              type: string
+            type: string
           description: I destinatari del token
         exp:
           type: integer
@@ -202,12 +198,17 @@ components:
           type: integer
           format: int64
           description: Timestamp di emissione del token
-  Caveat:
-    type: object
-    properties:
+    Caveat:
+      type: object
+      properties:
         key:
-            type: string
-            description: La chiave del caveat
+          type: string
+          description: La chiave del caveat
         value:
-            type: string
-            description: Il valore del caveat
+          type: string
+          description: Il valore del caveat
+
+    CaveatPacket:
+      type: array
+      items:
+        $ref: '#/components/schemas/Caveat'
