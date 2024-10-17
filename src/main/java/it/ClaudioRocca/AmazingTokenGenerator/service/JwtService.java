@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -18,10 +19,11 @@ import java.util.Map;
 public class JwtService {
     private final String secret = "yJojIqZismADFUmhEjgB9NJxh20JpP4d";
 
-    public ResponseEntity<String> createJwtToken(JwtCreateRequest tokenRequest) {
+    public ResponseEntity<?> createJwtToken(JwtCreateRequest tokenRequest) {
         try {
 
             JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder();
+            Instant start = Instant.now();
 
             claimsBuilder.subject(tokenRequest.getSub());
             if(tokenRequest.getAud() != null)
@@ -44,8 +46,12 @@ public class JwtService {
                     claimsSet);
             JWSSigner signer = new MACSigner(secret);
             signedJWT.sign(signer);
+            Instant end = Instant.now();
 
-            return ResponseEntity.ok(signedJWT.serialize());
+            return ResponseEntity.ok(Map.of(
+                    "token", signedJWT.serialize(),
+                    "tempo generazione token", (end.toEpochMilli() - start.toEpochMilli()) + " ms"))
+            ;
         } catch (
                 JOSEException e) {
             throw new RuntimeException(e);
@@ -53,20 +59,42 @@ public class JwtService {
     }
 
 
-    public ResponseEntity<?> verifyJwtToken(String token) {
+    public ResponseEntity<?> verifyJwtToken(String token, String subject) {
         Instant start = Instant.now();
+        ArrayList<String> errors = new ArrayList<>();
+        boolean isValid = true;
 
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             JWSVerifier verifier = new MACVerifier(secret);
+            String sub = signedJWT.getJWTClaimsSet().getSubject();
 
             if (!signedJWT.verify(verifier)) {
-                return ResponseEntity.badRequest().body("Firma del token non valida.");
+                errors.add("Firma del token non valida.");
+                isValid = false;
+            }
+
+            if (null != subject && !sub.equals(subject)) {
+                errors.add("Il soggetto del token non corrisponde a quello richiesto.");
+                isValid = false;
             }
 
             Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
-            if (new Date().after(expiration)) {
-                return ResponseEntity.badRequest().body("Token JWT scaduto.");
+            if (null != expiration && new Date().after(expiration)) {
+                errors.add("Token scaduto.");
+                isValid = false;
+            }
+
+            Date issuedAt = signedJWT.getJWTClaimsSet().getIssueTime();
+            if (null != issuedAt && new Date().before(issuedAt)) {
+                errors.add("Il token riporta data di emissione nel futuro.");
+                isValid = false;
+            }
+
+            Date notBefore = signedJWT.getJWTClaimsSet().getNotBeforeTime();
+            if (null != notBefore && new Date().before(notBefore)) {
+                errors.add("Il token non è ancora valido.");
+                isValid = false;
             }
 
             Instant end = Instant.now();
@@ -76,8 +104,10 @@ public class JwtService {
 
             return ResponseEntity.ok()
                     .body(Map.of(
-                            "decoded_payload", payload,
-                            "time_elapsed", timeElapsed + " ms"
+                            "payload", payload,
+                            "valido", isValid,
+                            "tempo verifica token", timeElapsed + " ms",
+                            "errori", errors
                     ));
 
         } catch (ParseException | JOSEException e) {

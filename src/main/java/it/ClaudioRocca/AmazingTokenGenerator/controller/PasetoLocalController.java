@@ -35,16 +35,18 @@ public class PasetoLocalController {
 
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<?> verifyToken(@RequestParam String token) {
-        return pasetoLocalService.verifyToken(token);
-
-    }
-
-
     @PostMapping("/create")
     public ResponseEntity<?> createLocalToken(@RequestBody String data,
                                                   @RequestParam(required = false) String footer) {
         return pasetoLocalService.createToken(data, footer);
     }
+
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyToken(@RequestParam String token, @RequestParam String subject) {
+        return pasetoLocalService.verifyToken(token, subject);
+
+    }
+
+
 }

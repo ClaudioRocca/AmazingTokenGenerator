@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
@@ -27,7 +28,8 @@ public class PasetoLocalService {
     public PasetoLocalService() {
     }
 
-    public ResponseEntity<?> verifyToken (String token){
+    public ResponseEntity<?> verifyToken (String token, String subject) {
+        ArrayList<String> errors = new ArrayList<>();
         Instant start = Instant.now();
 
         try {
@@ -41,18 +43,23 @@ public class PasetoLocalService {
             Gson gson = new Gson();
             JsonObject jsonPayload = gson.fromJson(decodedPayload, JsonObject.class);
             Boolean isValid = true;
-            if(jsonPayload.has("exp")) {
-                isValid = isValid && checkExpiration(jsonPayload);
+            if(jsonPayload.has("exp") && !checkExpiration(jsonPayload)) {
+                errors.add("Token scaduto");
+                isValid = false;
+            }
+            if(jsonPayload.has("nbf") && !checkNbf(jsonPayload)){
+                isValid = false;
+                errors.add("Token non ancora valido");
+            }
+            if(jsonPayload.has("iat") && !checkIat(jsonPayload)) {
+                isValid = false;
+                errors.add("Il token riporta data di emissione nel futuro");
+            }
 
+            if(jsonPayload.has("sub") && !jsonPayload.get("sub").getAsString().equals(subject)) {
+                isValid = false;
+                errors.add("Il token non è associato al soggetto richiesto");
             }
-            if(jsonPayload.has("nbf")) {
-                isValid = isValid && checkNbf(jsonPayload);
-            }
-            if(jsonPayload.has("iat")) {
-                isValid = isValid && checkIat(jsonPayload);
-            }
-
-            isValid = isValid && jsonPayload.get("sub").toString().equals("\"User123\"");
 
             Instant end = Instant.now();
 
@@ -62,8 +69,9 @@ public class PasetoLocalService {
                     .body(Map.of(
                             "decoded_payload", decodedPayload,
                             "footer", footer,
-                            "is_valid", isValid,
-                            "time_elapsed", timeElapsed + " ms"
+                            "valido", isValid,
+                            "errors", errors,
+                            "tempo verifica token", timeElapsed + " ms"
                     ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -82,7 +90,7 @@ public class PasetoLocalService {
             return ResponseEntity.ok()
                     .body(Map.of(
                             "token", token,
-                            "time_elapsed", (end.toEpochMilli() - start.toEpochMilli()) + " ms"
+                            "tempo generazione token", (end.toEpochMilli() - start.toEpochMilli()) + " ms"
                     ));
 
         } catch (Exception e) {

@@ -22,10 +22,10 @@ public class JwtController {
 
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<?> verifyJwtToken(@RequestParam String token) {
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyJwtToken(@RequestParam String token, @RequestParam String subject) {
 
-        return jwtService.verifyJwtToken(token);
+        return jwtService.verifyJwtToken(token, subject);
     }
 
 }
