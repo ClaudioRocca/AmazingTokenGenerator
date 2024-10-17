@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/token/macaroon")
+@RequestMapping("/macaroon")
 public class MacaroonController{
 
     @Autowired

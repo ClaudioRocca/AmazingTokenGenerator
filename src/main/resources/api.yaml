@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: Token Generation API
-  description: API per generare e verificare token JWT, PASETO e Macaroon
+  title: Token API
   version: 1.0.0
+  description: API per la gestione di token JWT, Macaroon e PASETO
 
 paths:
   /jwt/create:
@@ -16,134 +16,123 @@ paths:
               $ref: '#/components/schemas/JwtCreateRequest'
       responses:
         '200':
-          description: Token JWT generato con successo
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: Il token JWT generato
+          description: Token JWT creato con successo
+        '400':
+          description: Richiesta non valida
 
   /jwt/verify:
     get:
-      summary: Verifica la validità di un token JWT
+      summary: Verifica un token JWT
       parameters:
-        - name: token
-          in: query
+        - in: query
+          name: token
           required: true
           schema:
             type: string
-        - name: subject
-          in: query
+          description: Il token JWT da verificare
+        - in: query
+          name: subject
           required: true
           schema:
             type: string
+          description: Il soggetto per cui verificare il token
       responses:
         '200':
-          description: Token JWT valido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  valid:
-                    type: boolean
-                  message:
-                    type: string
+          description: Token JWT verificato con successo
+        '400':
+          description: Richiesta non valida
 
-  /paseto/create:
+  /macaroon/create:
     post:
-      summary: Crea un token PASETO
+      summary: Crea un Macaroon
+      parameters:
+        - in: query
+          name: location
+          required: true
+          schema:
+            type: string
+          description: La posizione per il Macaroon
+        - in: query
+          name: identifier
+          required: true
+          schema:
+            type: string
+          description: L'identificatore per il Macaroon
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasetoCreateRequest'
+              type: object
+              additionalProperties:
+                type: string
+              description: Lista di caveat per il Macaroon
       responses:
         '200':
-          description: Token PASETO generato con successo
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: Il token PASETO generato
+          description: Macaroon creato con successo
+        '400':
+          description: Richiesta non valida
 
-  /paseto/verify:
+  /macaroon/verify:
     get:
-      summary: Verifica la validità di un token PASETO
+      summary: Verifica un Macaroon
       parameters:
-        - name: token
-          in: query
+        - in: query
+          name: macaroon
           required: true
           schema:
             type: string
-        - name: subject
-          in: query
-          required: true
-          schema:
-            type: string
+          description: Il Macaroon da verificare
       responses:
         '200':
-          description: Token PASETO valido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  valid:
-                    type: boolean
-                  message:
-                    type: string
+          description: Macaroon verificato con successo
+        '400':
+          description: Richiesta non valida
 
-  /macaroons/create:
+  /paseto/local/create:
     post:
-      summary: Crea un token Macaroon
-
+      summary: Crea un token PASETO locale
+      parameters:
+        - in: query
+          name: footer
+          required: false
+          schema:
+            type: string
+          description: Footer opzionale per il token PASETO
       requestBody:
         required: true
         content:
-          application/json:
+          text/plain:
             schema:
-              $ref: '#/components/schemas/CaveatPacket'
+              type: string
+              description: Dati da includere nel token PASETO
       responses:
         '200':
-          description: Token Macaroon generato con successo
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: Il token Macaroon generato
+          description: Token PASETO creato con successo
+        '400':
+          description: Richiesta non valida
 
-  /macaroons/verify:
+  /paseto/local/verify:
     get:
-      summary: Verifica la validità di un token Macaroon
+      summary: Verifica un token PASETO
       parameters:
-        - name: token
-          in: query
+        - in: query
+          name: token
           required: true
           schema:
             type: string
+          description: Il token PASETO da verificare
+        - in: query
+          name: subject
+          required: true
+          schema:
+            type: string
+          description: Il soggetto per cui verificare il token
       responses:
         '200':
-          description: Token Macaroon valido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  valid:
-                    type: boolean
-                  message:
-                    type: string
+          description: Token PASETO verificato con successo
+        '400':
+          description: Richiesta non valida
 
 components:
   schemas:
@@ -155,60 +144,21 @@ components:
           description: Il soggetto del token
         iss:
           type: string
-          description: L'emittente del token
+          description: L'issuer del token
         aud:
           type: array
           items:
             type: string
-          description: I destinatari del token
+          description: Gli audience del token
         exp:
           type: integer
           format: int64
-          description: Timestamp di scadenza del token
+          description: La data di scadenza del token (in epoch time)
         nbf:
           type: integer
           format: int64
-          description: Timestamp prima del quale il token non è valido
+          description: Non valido prima di questa data (in epoch time)
         iat:
           type: integer
           format: int64
-          description: Timestamp di emissione del token
-
-    PasetoCreateRequest:
-      type: object
-      properties:
-        sub:
-          type: string
-          description: Il soggetto del token
-        iss:
-          type: string
-          description: L'emittente del token
-        aud:
-          type: string
-          description: I destinatari del token
-        exp:
-          type: integer
-          format: int64
-          description: Timestamp di scadenza del token
-        nbf:
-          type: integer
-          format: int64
-          description: Timestamp prima del quale il token non è valido
-        iat:
-          type: integer
-          format: int64
-          description: Timestamp di emissione del token
-    Caveat:
-      type: object
-      properties:
-        key:
-          type: string
-          description: La chiave del caveat
-        value:
-          type: string
-          description: Il valore del caveat
-
-    CaveatPacket:
-      type: array
-      items:
-        $ref: '#/components/schemas/Caveat'
+          description: La data di emissione del token (in epoch time)

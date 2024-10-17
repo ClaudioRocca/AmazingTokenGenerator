@@ -22,7 +22,7 @@ import org.paseto4j.commons.SecretKey;
 import org.paseto4j.commons.Version;
 
 @RestController
-@RequestMapping("/token/paseto/local")
+@RequestMapping("/paseto/local")
 public class PasetoLocalController {
 
 
